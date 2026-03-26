@@ -89,3 +89,29 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+// NEW: Get current user ID
+int
+sys_getuid(void)
+{
+  return myproc()->uid;
+}
+
+int
+sys_setuid(void)
+{
+  int uid;
+  struct proc *curproc = myproc();
+
+  if(argint(0, &uid) < 0)
+    return -1;
+
+  // Validate UID range
+  if(uid < 0 || uid > 65535) {
+    cprintf("setuid: invalid uid %d\n", uid);
+    return -1;
+  }
+
+  curproc->uid = uid;
+  return 0;
+}

@@ -72,8 +72,8 @@ mpsearch(void)
 static struct mpconf*
 mpconfig(struct mp **pmp)
 {
-  struct mpconf *conf;
-  struct mp *mp;
+  struct mpconf * volatile conf ;
+  struct mp * volatile mp;
 
   if((mp = mpsearch()) == 0 || mp->physaddr == 0)
     return 0;

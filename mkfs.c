@@ -4,6 +4,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <assert.h>
+#include <sys/stat.h> 
 
 #define stat xv6_stat  // avoid clash with host struct stat
 #include "types.h"
@@ -154,6 +155,42 @@ main(int argc, char *argv[])
 
     close(fd);
   }
+
+  // --- add /users file ---
+  fd = open("users", O_RDONLY);
+  if(fd < 0){
+      fprintf(stderr, "mkfs: cannot open host users file\n");
+      exit(1);
+  }
+
+  // Use host stat
+  #undef stat
+  struct stat st;
+  fstat(fd, &st);
+  #define stat xv6_stat
+
+  char *buf_users = malloc(st.st_size);
+  if(buf_users == 0){
+      fprintf(stderr, "mkfs: malloc failed for users\n");
+      exit(1);
+  }
+
+  if(read(fd, buf_users, st.st_size) != st.st_size){
+      fprintf(stderr, "mkfs: read failed for users\n");
+      exit(1);
+  }
+  close(fd);
+
+  inum = ialloc(T_FILE);
+
+  struct dirent de_users;
+  bzero(&de_users, sizeof(de_users));
+  de_users.inum = xshort(inum);
+  strncpy(de_users.name, "users", DIRSIZ);
+  iappend(rootino, &de_users, sizeof(de_users));
+
+  iappend(inum, buf_users, st.st_size);
+  free(buf_users);
 
   // fix size of root inode dir
   rinode(rootino, &din);
